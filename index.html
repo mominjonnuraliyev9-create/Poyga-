@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts (Inter) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -47,7 +49,7 @@
 </head>
 <body class="text-white overflow-hidden flex justify-center items-center min-h-screen">
 
-    <!-- TELEGRAM APP CONTAINER (Simulated Telegram Frame on Desktop, full screen on mobile) -->
+    <!-- TELEGRAM APP CONTAINER -->
     <div class="relative w-full max-w-md h-[100vh] md:h-[850px] md:rounded-3xl md:border-4 md:border-slate-800 bg-[#0b0f19] flex flex-col justify-between overflow-hidden shadow-2xl">
         
         <!-- Telegram App Header -->
@@ -57,16 +59,19 @@
                     <i class="fa-solid fa-arrow-left text-lg"></i>
                 </button>
                 <div>
-                    <h1 class="font-bold text-sm tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">SPEEDSTARS</h1>
-                    <p class="text-[10px] text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Online bot</p>
+                    <h1 class="font-bold text-sm tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">SPEEDSTARS MULTIPLAYER</h1>
+                    <div class="flex items-center gap-2">
+                        <!-- Server Status Indicator -->
+                        <span id="server-status-dot" class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
+                        <p id="server-status-text" class="text-[9px] text-red-400 font-bold">Ulanish...</p>
+                    </div>
                 </div>
             </div>
             <div class="flex items-center space-x-3 text-slate-400">
                 <button id="sound-btn" onclick="toggleMute()" class="hover:text-white transition duration-200">
                     <i id="sound-icon" class="fa-solid fa-volume-high"></i>
                 </button>
-                <i class="fa-solid fa-ellipsis-vertical cursor-pointer"></i>
-                <i class="fa-solid fa-xmark cursor-pointer text-lg"></i>
+                <i class="fa-solid fa-ellipsis-vertical"></i>
             </div>
         </div>
 
@@ -76,12 +81,11 @@
             <!-- 1. SPLASH / LOADING SCREEN -->
             <div id="screen-splash" class="absolute inset-0 bg-gradient-to-b from-[#0b0f19] via-[#0e1626] to-[#080a10] flex flex-col justify-between items-center p-8 z-50">
                 <div class="my-auto flex flex-col items-center">
-                    <!-- Glowing Game Logo -->
                     <div class="w-24 h-24 rounded-2xl bg-gradient-to-tr from-cyan-500 to-pink-500 flex items-center justify-center neon-border-blue mb-6 animate-bounce">
                         <i class="fa-solid fa-flag-checkered text-5xl text-white"></i>
                     </div>
-                    <h2 class="text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-pink-500">TON SPEEDSTARS</h2>
-                    <p class="text-slate-400 text-sm mt-2 text-center max-w-[280px]">Telegramda birinchi 3D/Neon poyga mini ilovasi. 4 kishilik real vaqt poygasi!</p>
+                    <h2 class="text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-pink-500">SPEEDSTARS</h2>
+                    <p class="text-slate-400 text-sm mt-2 text-center max-w-[280px]">Haqiqiy onlayn poygachilar bilan real-vaqt rejimida TON kiber-musobaqasi!</p>
                 </div>
                 
                 <div class="w-full max-w-[280px] mb-12">
@@ -92,7 +96,19 @@
                     <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
                         <div id="splash-progress" class="w-0 h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-300"></div>
                     </div>
-                    <p class="text-[10px] text-center text-slate-500 mt-4">@Telegram Speedstars LLC, 2026</p>
+                    <p class="text-[10px] text-center text-slate-500 mt-4">Telegram WebApp SDK v7.0 & Firestore Sync</p>
+                </div>
+            </div>
+
+            <!-- Custom Notification Modal (Anti-Alert Guardrail) -->
+            <div id="notification-modal" class="hidden absolute inset-0 bg-black/80 flex items-center justify-center p-6 z-50">
+                <div class="bg-[#121824] border border-slate-800 rounded-2xl p-5 w-full max-w-[300px] text-center space-y-4">
+                    <div class="w-12 h-12 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center mx-auto text-xl">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <h4 class="text-sm font-bold text-slate-200" id="notification-title">Diqqat</h4>
+                    <p class="text-xs text-slate-400" id="notification-message">Xatolik yuz berdi.</p>
+                    <button onclick="closeNotification()" class="w-full py-2 bg-cyan-500 text-slate-950 font-bold text-xs rounded-lg hover:brightness-110 active:scale-95 transition-all">Tushundim</button>
                 </div>
             </div>
 
@@ -102,23 +118,23 @@
                 <div class="bg-gradient-to-r from-slate-900 to-slate-900/40 p-3.5 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
                     <div class="flex items-center space-x-3">
                         <div class="relative">
-                            <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center border-2 border-cyan-500 overflow-hidden">
-                                <span class="font-bold text-cyan-400 text-sm">TY</span>
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center border-2 border-cyan-500 overflow-hidden">
+                                <span id="user-avatar-initials" class="font-bold text-white text-sm">TY</span>
                             </div>
                             <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-[#0b0f19] rounded-full"></span>
                         </div>
                         <div>
                             <div class="flex items-center gap-1.5">
-                                <span class="font-bold text-sm text-slate-200">@poygachi_uz</span>
+                                <span id="user-fullname" class="font-bold text-sm text-slate-200">@poygachi_uz</span>
                                 <span class="bg-cyan-500/20 text-cyan-400 text-[9px] px-1.5 py-0.5 rounded-full font-bold">Lvl 1</span>
                             </div>
-                            <p class="text-[11px] text-slate-400">Liderlar qatorida: #142</p>
+                            <p class="text-[11px] text-slate-400">Onlayn Reyting: <span class="text-cyan-400 font-bold">#142</span></p>
                         </div>
                     </div>
                     
                     <div class="text-right">
                         <div class="flex items-center space-x-1.5">
-                            <img src="https://placehold.co/20x20/0088cc/ffffff?text=T" onerror="this.src='https://cdn-icons-png.flaticon.com/512/825/825508.png'" class="w-4 h-4 rounded-full" alt="TON">
+                            <i class="fa-brands fa-ethereum text-sky-400"></i>
                             <span id="user-ton" class="font-extrabold text-sm text-sky-400">12.50 TON</span>
                         </div>
                         <div class="flex items-center justify-end space-x-1 mt-0.5">
@@ -128,23 +144,20 @@
                     </div>
                 </div>
 
-                <!-- Banner Slider or Action Stats -->
+                <!-- Banner Area -->
                 <div class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-blue-900 to-indigo-950 p-4 border border-blue-500/30">
-                    <div class="absolute right-2 -bottom-4 opacity-15 text-9xl">
-                        <i class="fa-solid fa-car-side"></i>
-                    </div>
                     <div class="relative z-10 max-w-[70%]">
                         <span class="bg-rose-500 text-white font-extrabold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded">Mavsum 1</span>
-                        <h3 class="text-lg font-extrabold mt-1 text-white leading-tight">YANGI FUTURISTIK TRASSALAR!</h3>
-                        <p class="text-xs text-blue-200 mt-1">Ko'proq poyga yuting, $STARS va TON mukofotlariga ega bo'ling.</p>
+                        <h3 class="text-lg font-extrabold mt-1 text-white leading-tight">REAL MULTIPLAYER SHOU!</h3>
+                        <p class="text-xs text-blue-200 mt-1">Haqiqiy raqiblar bilan poygalashib g'olib bo'ling va mukofot TON tangalarni yutib oling.</p>
                     </div>
                 </div>
 
                 <!-- Play Match Button Area -->
                 <div class="flex flex-col items-center py-4">
-                    <button onclick="startMatchmaking()" class="pulse-glow-button w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 font-extrabold text-lg tracking-wide shadow-[0_0_20px_rgba(56,189,248,0.4)] hover:brightness-110 active:scale-95 transition-all flex items-center justify-center space-x-3">
-                        <i class="fa-solid fa-gamepad text-xl"></i>
-                        <span>POYGANING BOSHLASH (4X)</span>
+                    <button id="btn-search-online" onclick="startMatchmaking()" class="pulse-glow-button w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 font-extrabold text-lg tracking-wide shadow-[0_0_20px_rgba(56,189,248,0.4)] hover:brightness-110 active:scale-95 transition-all flex items-center justify-center space-x-3">
+                        <i class="fa-solid fa-tower-broadcast text-xl animate-pulse"></i>
+                        <span>ONLAYN POYGA QIDIRISH</span>
                     </button>
                     <p class="text-slate-400 text-[11px] mt-2 text-center flex items-center gap-1">
                         <i class="fa-solid fa-bolt text-amber-400"></i> Kirish qiymati: <span class="font-bold text-amber-400">100 tanga</span> (G'olib 350 tanga oladi)
@@ -191,8 +204,8 @@
             <!-- 3. MATCHMAKING SCREEN -->
             <div id="screen-matchmaking" class="hidden flex-1 flex flex-col justify-between p-6">
                 <div class="text-center mt-6">
-                    <h3 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500">RAQIBLAR QIDIRILMOQDA...</h3>
-                    <p class="text-xs text-slate-400 mt-2">Global serverdan 4 kishilik o'yin uchun poygachilar bog'lanmoqda</p>
+                    <h3 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 uppercase">Onlayn Kutilmoqda...</h3>
+                    <p id="matchmaking-desc" class="text-xs text-slate-400 mt-2">Haqiqiy poygachilar qidirilmoqda...</p>
                 </div>
 
                 <!-- 4 Players Matching Circle visual -->
@@ -206,20 +219,25 @@
                         </div>
                     </div>
 
+                    <!-- Matchmaking countdown timer / Status -->
+                    <div class="mt-4 text-center">
+                        <p id="match-timer-text" class="text-sm font-bold text-pink-400"></p>
+                    </div>
+
                     <!-- Players connection grid -->
                     <div class="grid grid-cols-2 gap-4 w-full mt-10 max-w-[320px]">
                         <!-- Player 1 (User) -->
-                        <div class="bg-[#121824] p-3 rounded-xl border border-cyan-500/50 flex items-center space-x-2">
+                        <div id="slot-player-1" class="bg-[#121824] p-3 rounded-xl border border-cyan-500/50 flex items-center space-x-2">
                             <div class="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400 flex items-center justify-center font-bold text-xs text-cyan-400">
                                 SIZ
                             </div>
                             <div class="overflow-hidden">
-                                <p class="text-xs font-bold truncate">@poygachi_uz</p>
-                                <span class="text-[9px] text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> Ulandi</span>
+                                <p id="match-user-1" class="text-xs font-bold truncate">@poygachi_uz</p>
+                                <span class="text-[9px] text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> Tayyor</span>
                             </div>
                         </div>
                         
-                        <!-- Player 2 (Bot 1) -->
+                        <!-- Player 2 -->
                         <div id="slot-player-2" class="bg-[#121824]/40 p-3 rounded-xl border border-slate-800 flex items-center space-x-2 transition-all duration-500">
                             <div class="slot-avatar w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs">
                                 ?
@@ -230,7 +248,7 @@
                             </div>
                         </div>
 
-                        <!-- Player 3 (Bot 2) -->
+                        <!-- Player 3 -->
                         <div id="slot-player-3" class="bg-[#121824]/40 p-3 rounded-xl border border-slate-800 flex items-center space-x-2 transition-all duration-500">
                             <div class="slot-avatar w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs">
                                 ?
@@ -241,7 +259,7 @@
                             </div>
                         </div>
 
-                        <!-- Player 4 (Bot 3) -->
+                        <!-- Player 4 -->
                         <div id="slot-player-4" class="bg-[#121824]/40 p-3 rounded-xl border border-slate-800 flex items-center space-x-2 transition-all duration-500">
                             <div class="slot-avatar w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs">
                                 ?
@@ -273,26 +291,18 @@
                     </div>
                 </div>
 
-                <!-- 3D-like Car Showcase Carousel -->
+                <!-- 3D Car Showcase -->
                 <div class="relative bg-gradient-to-b from-slate-900 via-slate-900/60 to-[#0b0f19] p-4 rounded-3xl border border-slate-800 flex flex-col items-center justify-center min-h-[220px]">
-                    <!-- Futuristic Neon Stand -->
                     <div class="absolute bottom-12 w-48 h-10 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-2 border-cyan-500/50 rounded-full blur-[2px] transform rotateX-45"></div>
                     
-                    <!-- Car Graphic (using dynamic customized layered SVG for absolute visuals) -->
                     <div class="relative w-48 h-24 mb-4 flex items-center justify-center animate-pulse">
                         <svg class="w-full h-full filter drop-shadow-[0_0_15px_rgba(56,189,248,0.7)]" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Shadow / Glow -->
                             <ellipse cx="60" cy="50" rx="45" ry="8" fill="#06b6d4" fill-opacity="0.3"/>
-                            <!-- Car Body -->
                             <path d="M15 45L25 25L45 15H75L95 25L105 45H15Z" fill="#1e293b"/>
-                            <!-- Cyber Glass Cabin -->
                             <path d="M42 22L55 17H65L78 22L70 33H50L42 22Z" fill="#22d3ee" fill-opacity="0.8"/>
-                            <!-- Glowing Neon Lines -->
                             <path d="M15 45H105M25 25H95" stroke="#06b6d4" stroke-width="2" stroke-linecap="round"/>
-                            <!-- Headlights -->
                             <polygon points="10 42 16 45 16 38" fill="#fbbf24"/>
                             <polygon points="110 42 104 45 104 38" fill="#06b6d4"/>
-                            <!-- Futuristic Wheels -->
                             <circle cx="30" cy="46" r="10" fill="#0f172a" stroke="#06b6d4" stroke-width="3"/>
                             <circle cx="30" cy="46" r="4" fill="#22d3ee"/>
                             <circle cx="90" cy="46" r="10" fill="#0f172a" stroke="#06b6d4" stroke-width="3"/>
@@ -300,11 +310,11 @@
                         </svg>
                     </div>
                     
-                    <h4 class="text-base font-extrabold text-cyan-400 uppercase tracking-wide neon-text-blue">APEX PHANTOM v1.2</h4>
+                    <h4 class="text-base font-extrabold text-cyan-400 uppercase tracking-wide neon-text-blue">APEX PHANTOM MULTIPLAYER Edition</h4>
                     <p class="text-[11px] text-slate-400 mt-1">Sizning asosiy poyga kiber-avtomobilingiz</p>
                 </div>
 
-                <!-- Upgrades Stats Bars -->
+                <!-- Upgrades Stats -->
                 <div class="bg-[#121824] p-4 rounded-2xl border border-slate-800 space-y-4">
                     <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Avtomobil Parametrlari & Yangilash</h5>
                     
@@ -379,12 +389,11 @@
                     <h3 class="text-lg font-bold flex items-center justify-center gap-2">
                         <i class="fa-solid fa-trophy text-amber-400"></i> Chempionlar Reytingi
                     </h3>
-                    <p class="text-slate-400 text-[11px] mt-1">Har hafta eng yaxshi 3 ta poygachiga bepul TON mukofotlari beriladi!</p>
+                    <p class="text-slate-400 text-[11px] mt-1">Haqiqiy onlayn poygalarda g'alaba qozonib reyting ochkolarini to'plang!</p>
                 </div>
 
-                <!-- Top 3 Podiums visual style -->
+                <!-- Top 3 Podiums -->
                 <div class="flex justify-center items-end space-x-3 pt-4 pb-2">
-                    <!-- Rank 2 -->
                     <div class="flex flex-col items-center w-20">
                         <div class="w-12 h-12 rounded-full border-2 border-slate-300 bg-slate-800 flex items-center justify-center font-bold text-slate-300 overflow-hidden text-xs">
                             MW
@@ -394,7 +403,6 @@
                             <span class="text-[9px] text-slate-400 truncate w-full text-center">@ton_whale</span>
                         </div>
                     </div>
-                    <!-- Rank 1 -->
                     <div class="flex flex-col items-center w-24">
                         <div class="relative">
                             <i class="fa-solid fa-crown absolute -top-4 left-1/2 transform -translate-x-1/2 text-amber-400 text-lg animate-bounce"></i>
@@ -407,7 +415,6 @@
                             <span class="text-[10px] text-amber-300 font-semibold truncate w-full text-center">@pavel_durov</span>
                         </div>
                     </div>
-                    <!-- Rank 3 -->
                     <div class="flex flex-col items-center w-20">
                         <div class="w-12 h-12 rounded-full border-2 border-amber-600 bg-slate-800 flex items-center justify-center font-bold text-amber-600 overflow-hidden text-xs">
                             HK
@@ -421,7 +428,6 @@
 
                 <!-- Leaderboard list -->
                 <div class="flex-1 bg-[#121824] rounded-2xl border border-slate-800 overflow-y-auto max-h-[220px]">
-                    <!-- Item 4 -->
                     <div class="flex justify-between items-center p-3 border-b border-slate-800/60">
                         <div class="flex items-center space-x-3">
                             <span class="font-bold text-slate-400 w-4 text-center">4</span>
@@ -430,7 +436,6 @@
                         </div>
                         <span class="text-xs font-extrabold text-cyan-400">14,250 pts</span>
                     </div>
-                    <!-- Item 5 -->
                     <div class="flex justify-between items-center p-3 border-b border-slate-800/60">
                         <div class="flex items-center space-x-3">
                             <span class="font-bold text-slate-400 w-4 text-center">5</span>
@@ -439,12 +444,11 @@
                         </div>
                         <span class="text-xs font-extrabold text-cyan-400">12,100 pts</span>
                     </div>
-                    <!-- Item 142 (Your Rank highlighted) -->
                     <div class="flex justify-between items-center p-3 bg-cyan-950/40 border-b border-slate-850">
                         <div class="flex items-center space-x-3">
                             <span class="font-bold text-cyan-400 w-4 text-center">142</span>
                             <div class="w-7 h-7 rounded-full bg-cyan-500/20 border border-cyan-500 flex items-center justify-center text-[10px] font-bold text-cyan-400">TY</div>
-                            <span class="text-xs font-bold text-cyan-400">@poygachi_uz (Siz)</span>
+                            <span id="leaderboard-user-row" class="text-xs font-bold text-cyan-400">@poygachi_uz (Siz)</span>
                         </div>
                         <span class="text-xs font-extrabold text-cyan-400">2,450 pts</span>
                     </div>
@@ -468,22 +472,22 @@
                         </div>
                     </div>
 
-                    <!-- Mini Live Rankings overlay (representing 4 players) -->
+                    <!-- Live Rankings overlay -->
                     <div class="bg-black/70 backdrop-blur-md border border-slate-800 rounded-xl px-2.5 py-1.5 space-y-0.5 text-[10px] w-28">
                         <div id="rank-1-line" class="flex justify-between items-center font-bold">
-                            <span class="truncate text-slate-300">1. @pavel_durov</span>
+                            <span class="truncate text-slate-300">1. O'yinchi 1</span>
                             <span class="text-[9px] text-amber-400">1st</span>
                         </div>
                         <div id="rank-2-line" class="flex justify-between items-center text-slate-400">
-                            <span class="truncate">2. @ton_whale</span>
+                            <span class="truncate">2. O'yinchi 2</span>
                             <span class="text-[9px]">2nd</span>
                         </div>
                         <div id="rank-3-line" class="flex justify-between items-center text-slate-400">
-                            <span class="truncate">3. Siz</span>
+                            <span class="truncate">3. O'yinchi 3</span>
                             <span class="text-[9px]">3rd</span>
                         </div>
                         <div id="rank-4-line" class="flex justify-between items-center text-slate-400">
-                            <span class="truncate">4. @hamster_king</span>
+                            <span class="truncate">4. O'yinchi 4</span>
                             <span class="text-[9px]">4th</span>
                         </div>
                     </div>
@@ -492,9 +496,8 @@
                 <!-- Game Active Canvas -->
                 <canvas id="game-canvas" class="w-full h-full block"></canvas>
 
-                <!-- On-Screen Controls for Mobile (Telegram Play) -->
+                <!-- On-Screen Controls for Mobile -->
                 <div class="absolute bottom-4 left-4 right-4 flex justify-between items-center z-10">
-                    <!-- Directional D-PAD (Left/Right Steering) -->
                     <div class="flex space-x-4">
                         <button id="ctrl-left" class="w-14 h-14 bg-slate-900/80 active:bg-cyan-500/50 backdrop-blur-md border border-slate-700/60 rounded-full flex items-center justify-center text-xl text-white select-none active:scale-90 transition-all">
                             <i class="fa-solid fa-arrow-left"></i>
@@ -504,16 +507,13 @@
                         </button>
                     </div>
 
-                    <!-- Powerup & Drift/Acceleration Buttons -->
                     <div class="flex space-x-3.5">
-                        <!-- Nitro Boost Button (Only active when nitro collected) -->
                         <button id="ctrl-boost" class="relative w-14 h-14 bg-amber-500/20 border border-amber-500/50 rounded-full flex flex-col items-center justify-center text-amber-400 select-none active:scale-90 transition-all">
                             <i class="fa-solid fa-bolt text-lg"></i>
                             <span class="text-[7px] font-black tracking-widest">BOOST</span>
                             <span id="boost-indicator" class="absolute -top-1 -right-1 bg-red-500 text-white font-bold text-[8px] w-4 h-4 rounded-full flex items-center justify-center">0</span>
                         </button>
                         
-                        <!-- Gas / Acceleration Pedal -->
                         <button id="ctrl-gas" class="w-16 h-16 bg-gradient-to-tr from-cyan-600 to-blue-500 border border-cyan-400 rounded-full flex flex-col items-center justify-center text-slate-950 font-black select-none active:scale-95 shadow-lg shadow-cyan-500/30">
                             <i class="fa-solid fa-angles-up text-lg"></i>
                             <span class="text-[8px] tracking-widest uppercase">GAZ</span>
@@ -534,10 +534,8 @@
                     <p id="results-subtitle" class="text-xs text-slate-400">Poyga yakunlandi. Sizning natijangiz:</p>
                 </div>
 
-                <!-- Large Winner Visual Board -->
                 <div class="my-auto flex flex-col items-center space-y-4">
                     <div class="relative flex justify-center items-center w-36 h-36">
-                        <!-- Inner Glowing Radial Frame -->
                         <div class="absolute inset-0 bg-gradient-to-tr from-cyan-500 to-pink-500 rounded-full animate-spin opacity-50 filter blur-[8px]"></div>
                         <div class="relative w-28 h-28 rounded-full bg-slate-900 border border-slate-800 flex flex-col items-center justify-center z-10 shadow-2xl">
                             <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">O'rin</p>
@@ -567,7 +565,6 @@
                     </div>
                 </div>
 
-                <!-- Back to lobby / Retry Buttons -->
                 <div class="space-y-3">
                     <button onclick="changeScreen('home')" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-extrabold text-sm tracking-wide shadow-lg hover:brightness-110 active:scale-95 transition-all">
                         ASOSIY MENYUGA QAYTISH
@@ -580,21 +577,16 @@
 
         </div>
 
-        <!-- TELEGRAM APP BOTTOM NAVIGATION BAR -->
+        <!-- APP BOTTOM NAVIGATION BAR -->
         <div id="app-nav-bar" class="px-3 py-2 bg-[#121824] border-t border-slate-800 flex justify-around items-center shrink-0 z-10">
-            <!-- Tab Poyga (Home) -->
             <button onclick="changeTab('home')" id="tab-home" class="flex flex-col items-center space-y-1 text-cyan-400 transition-colors duration-200">
                 <i class="fa-solid fa-flag-checkered text-lg"></i>
                 <span class="text-[9px] font-bold">Poyga</span>
             </button>
-            
-            <!-- Tab Garaj -->
             <button onclick="changeTab('garage')" id="tab-garage" class="flex flex-col items-center space-y-1 text-slate-500 hover:text-white transition-colors duration-200">
                 <i class="fa-solid fa-warehouse text-lg"></i>
                 <span class="text-[9px] font-bold">Garaj</span>
             </button>
-
-            <!-- Tab Leaderboard -->
             <button onclick="changeTab('leaderboard')" id="tab-leaderboard" class="flex flex-col items-center space-y-1 text-slate-500 hover:text-white transition-colors duration-200">
                 <i class="fa-solid fa-trophy text-lg"></i>
                 <span class="text-[9px] font-bold">Reyting</span>
@@ -602,11 +594,344 @@
         </div>
     </div>
 
-    <script>
-        // --- SOUND EFFECTS SYNTHESIZER (Web Audio API) ---
+    <!-- Firebase core & Firestore -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- GLOBAL APP STATE & VARIABLES ---
+        let db, auth;
+        let isAuthComplete = false;
+        let myUsername = "@poygachi_uz";
+        let myUserId = "";
+        let currentRoomId = null;
+        let currentRoomRef = null;
+        let unsubscribeRoom = null;
+        let isCreator = false;
+        let heartbeatInterval = null;
+        let writeStateInterval = null;
+
+        let tg = null;
+        let currentTab = 'home';
+        let walletCoins = 2500;
+        let walletTon = 12.50;
+        let upgradeLevels = { speed: 1, handling: 1, nitro: 1 };
+        const screens = ['splash', 'home', 'matchmaking', 'garage', 'leaderboard', 'game', 'results'];
+
+        // Sound System
         let audioCtx = null;
         let isMuted = false;
 
+        // Game Setup
+        let gameRunning = false;
+        let gameFinished = false;
+        let finishedRacersCount = 0;
+        const lapsToWin = 3;
+
+        // Use standard environment variables or fallback
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'speedstars-global-poyga';
+        const rawConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+        const firebaseConfig = rawConfig ? JSON.parse(rawConfig) : {
+            apiKey: "AIzaSyDummyKeyHereToAvoidInitializationCrash",
+            authDomain: "speedstars-multiplayer.firebaseapp.com",
+            projectId: "speedstars-multiplayer",
+            storageBucket: "speedstars-multiplayer.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef"
+        };
+
+        // Custom Notification helper instead of browser alerts (Rule Violation prevention)
+        function showNotification(title, message) {
+            document.getElementById('notification-title').innerText = title;
+            document.getElementById('notification-message').innerText = message;
+            document.getElementById('notification-modal').classList.remove('hidden');
+        }
+        window.closeNotification = function() {
+            document.getElementById('notification-modal').classList.add('hidden');
+        }
+
+        // --- INITIALIZE FIREBASE & TELEGRAM WEBAPP ---
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Configure Authentication priority (Rule 3)
+            const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            if (token) {
+                signInWithCustomToken(auth, token).then(handleAuthSuccess).catch(() => {
+                    signInAnonymously(auth).then(handleAuthSuccess).catch(handleAuthError);
+                });
+            } else {
+                signInAnonymously(auth).then(handleAuthSuccess).catch(handleAuthError);
+            }
+        } catch (e) {
+            console.error("Firebase startup failure:", e);
+            setOnlineIndicator(false, "Server Oflayn (Solo)");
+        }
+
+        function handleAuthSuccess(userCredential) {
+            const user = userCredential.user;
+            myUserId = user.uid;
+            isAuthComplete = true;
+            setOnlineIndicator(true, "Tarmoq: Firebase Onlayn");
+            
+            // Telegram SDK verification
+            if (window.Telegram && window.Telegram.WebApp) {
+                tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const tgUser = tg.initDataUnsafe.user;
+                    myUsername = tgUser.username ? "@" + tgUser.username : tgUser.first_name;
+                    document.getElementById('user-fullname').innerText = myUsername;
+                    document.getElementById('leaderboard-user-row').innerText = `${myUsername} (Siz)`;
+                    const initials = (tgUser.first_name ? tgUser.first_name[0] : "") + (tgUser.last_name ? tgUser.last_name[0] : "");
+                    document.getElementById('user-avatar-initials').innerText = initials.toUpperCase() || "TY";
+                }
+            }
+        }
+
+        function handleAuthError(err) {
+            console.error("Authentication Error:", err);
+            setOnlineIndicator(false, "Tarmoq Xatoligi");
+        }
+
+        function setOnlineIndicator(online, text) {
+            const dot = document.getElementById('server-status-dot');
+            const label = document.getElementById('server-status-text');
+            if (online) {
+                dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
+                label.className = "text-[9px] text-emerald-400 font-bold";
+            } else {
+                dot.className = "w-1.5 h-1.5 rounded-full bg-red-500 animate-ping";
+                label.className = "text-[9px] text-red-400 font-bold";
+            }
+            label.innerText = text;
+        }
+
+        // --- STREAMING_CHUNK:Matchmaking Logic (Serverless Firestore Rooms) ---
+        async function startMatchmaking() {
+            playSound('click');
+            if (walletCoins < 100) {
+                showNotification("Mablag' yetarsiz", "Onlayn poygaga kirish to'lovi 100 tangani tashkil etadi.");
+                return;
+            }
+            if (!isAuthComplete) {
+                showNotification("Ulanish xatosi", "Serverga onlayn ulanish amalga oshmadi. Iltimos, qayta urunib ko'ring.");
+                return;
+            }
+
+            walletCoins -= 100;
+            changeScreen('matchmaking');
+            document.getElementById('match-user-1').innerText = myUsername;
+
+            // Clean up previous lobby slots UI
+            for (let i = 2; i <= 4; i++) {
+                const slot = document.getElementById(`slot-player-${i}`);
+                slot.className = "bg-[#121824]/40 p-3 rounded-xl border border-slate-800 flex items-center space-x-2";
+                slot.querySelector('.slot-avatar').className = "slot-avatar w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs";
+                slot.querySelector('.slot-avatar').innerText = "?";
+                slot.querySelector('.slot-info').innerHTML = `<p class="text-xs font-bold text-slate-500 italic">Izlanmoqda...</p><span class="text-[9px] text-slate-500">Kutilmoqda...</span>`;
+            }
+
+            document.getElementById('match-timer-text').innerText = "Raqiblar qidirilmoqda...";
+
+            try {
+                // Rule 1: Always strict path. Rule 2: Fetch all and filter in memory (no complex query)
+                const roomsCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms');
+                const q = query(roomsCol);
+                const querySnapshot = await getDocs(q);
+                
+                let foundRoom = null;
+                const now = Date.now();
+
+                querySnapshot.forEach(docSnap => {
+                    const roomData = docSnap.data();
+                    // Clean up stale rooms dynamically (greater than 10 minutes)
+                    if (now - roomData.createdAt > 600000) {
+                        deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', docSnap.id));
+                    } else if (roomData.status === 'waiting' && roomData.players.length < 4) {
+                        foundRoom = roomData;
+                    }
+                });
+
+                if (foundRoom) {
+                    // Join existing Room
+                    currentRoomId = foundRoom.id;
+                    isCreator = false;
+                    currentRoomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
+                    
+                    const updatedPlayers = [...foundRoom.players, {
+                        uid: myUserId,
+                        username: myUsername,
+                        isBot: false,
+                        color: '#ec4899' // Pink peer color
+                    }];
+
+                    await updateDoc(currentRoomRef, { players: updatedPlayers });
+                } else {
+                    // Create new Room
+                    currentRoomId = 'room_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+                    isCreator = true;
+                    currentRoomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
+
+                    const newRoom = {
+                        id: currentRoomId,
+                        status: 'waiting',
+                        createdAt: Date.now(),
+                        creatorId: myUserId,
+                        players: [{
+                            uid: myUserId,
+                            username: myUsername,
+                            isBot: false,
+                            color: '#22d3ee' // Cyan player color
+                        }],
+                        states: {}
+                    };
+
+                    await setDoc(currentRoomRef, newRoom);
+                }
+
+                // Subscribe to Room updates
+                subscribeToRoomUpdates();
+
+            } catch (err) {
+                console.error("Matchmaking Error:", err);
+                cancelMatchmaking();
+                showNotification("Matchmaking xatoligi", "Ma'lumotlar bazasiga ulanib bo'lmadi. Oflayn rejimda harakatlaning.");
+            }
+        }
+
+        function subscribeToRoomUpdates() {
+            if (unsubscribeRoom) unsubscribeRoom();
+
+            let lobbyTimer = 10; // 10 seconds lobby timeout to auto-fill with bots
+            let lobbyCountdownInterval = setInterval(() => {
+                if (currentRoomId && isCreator) {
+                    lobbyTimer--;
+                    if (lobbyTimer <= 0) {
+                        clearInterval(lobbyCountdownInterval);
+                        fillRoomWithBotsAndStart();
+                    } else {
+                        document.getElementById('match-timer-text').innerText = `Botlar bilan to'ldirilishiga: ${lobbyTimer} soniya`;
+                    }
+                } else if (!currentRoomId) {
+                    clearInterval(lobbyCountdownInterval);
+                }
+            }, 1000);
+
+            // Real-time Firestore sync
+            unsubscribeRoom = onSnapshot(currentRoomRef, (docSnapshot) => {
+                if (!docSnapshot.exists()) return;
+                const roomData = docSnapshot.data();
+
+                // Update Lobby Slots UI
+                let slotIndex = 2;
+                roomData.players.forEach(p => {
+                    if (p.uid !== myUserId) {
+                        const slot = document.getElementById(`slot-player-${slotIndex}`);
+                        slot.className = "bg-[#121824] p-3 rounded-xl border border-cyan-500/50 flex items-center space-x-2";
+                        
+                        const avatar = slot.querySelector('.slot-avatar');
+                        avatar.className = "slot-avatar w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500 flex items-center justify-center text-xs";
+                        avatar.innerText = p.isBot ? "🤖" : "👤";
+                        
+                        const info = slot.querySelector('.slot-info');
+                        info.innerHTML = `<p class="text-xs font-bold text-white">${p.username}</p><span class="text-[9px] text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> Ulandi</span>`;
+                        slotIndex++;
+                    }
+                });
+
+                // Matchmaking completed / Status changed to playing
+                if (roomData.status === 'playing' && !gameRunning) {
+                    clearInterval(lobbyCountdownInterval);
+                    launchGame(roomData);
+                }
+
+                // Listen to continuous driving states of peers during active game
+                if (gameRunning && roomData.states) {
+                    players.forEach(car => {
+                        if (!car.isPlayer && roomData.states[car.id]) {
+                            const state = roomData.states[car.id];
+                            car.targetX = state.x;
+                            car.targetY = state.y;
+                            car.targetAngle = state.angle;
+                            car.targetSpeed = state.speed;
+                            car.boostActive = state.boostActive;
+                            car.shieldActive = state.shieldActive;
+                            car.lastUpdate = state.lastUpdate;
+                        }
+                    });
+                }
+            }, (err) => {
+                console.error("Room listener failed:", err);
+            });
+        }
+
+        async function fillRoomWithBotsAndStart() {
+            if (!currentRoomRef) return;
+            try {
+                const docSnap = await getDoc(currentRoomRef);
+                if (!docSnap.exists()) return;
+                const roomData = docSnap.data();
+
+                const botList = [
+                    { uid: "bot1", username: "@ton_whale", isBot: true, color: "#a855f7" },
+                    { uid: "bot2", username: "@pavel_durov", isBot: true, color: "#10b981" },
+                    { uid: "bot3", username: "@hamster_king", isBot: true, color: "#eab308" }
+                ];
+
+                let finalPlayers = [...roomData.players];
+                let botIdx = 0;
+                while (finalPlayers.length < 4) {
+                    finalPlayers.push(botList[botIdx++]);
+                }
+
+                await updateDoc(currentRoomRef, {
+                    players: finalPlayers,
+                    status: 'playing'
+                });
+
+            } catch (err) {
+                console.error("Auto-filling bots failed:", err);
+            }
+        }
+
+        async function cancelMatchmaking() {
+            playSound('click');
+            walletCoins += 100; // refund fee
+            
+            if (unsubscribeRoom) {
+                unsubscribeRoom();
+                unsubscribeRoom = null;
+            }
+
+            if (currentRoomId && currentRoomRef) {
+                try {
+                    const docSnap = await getDoc(currentRoomRef);
+                    if (docSnap.exists()) {
+                        const roomData = docSnap.data();
+                        const updatedPlayers = roomData.players.filter(p => p.uid !== myUserId);
+                        
+                        if (updatedPlayers.length === 0) {
+                            await deleteDoc(currentRoomRef);
+                        } else {
+                            await updateDoc(currentRoomRef, { players: updatedPlayers });
+                        }
+                    }
+                } catch (e) {
+                    console.error("Cleanup error during cancel:", e);
+                }
+            }
+
+            currentRoomId = null;
+            currentRoomRef = null;
+            changeScreen('home');
+        }
+
+        // --- STREAMING_CHUNK:Sound Effects Synthesizer ---
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -633,7 +958,6 @@
                     osc.stop(audioCtx.currentTime + 0.1);
                 } 
                 else if (type === 'engine') {
-                    // Constant engine thrum
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(60 * pitch, audioCtx.currentTime);
                     gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
@@ -652,15 +976,14 @@
                 } 
                 else if (type === 'collect') {
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-                    osc.frequency.setValueAtTime(880 * pitch, audioCtx.currentTime + 0.1); // A5
+                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(880 * pitch, audioCtx.currentTime + 0.1);
                     gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
                     osc.start();
                     osc.stop(audioCtx.currentTime + 0.3);
                 } 
                 else if (type === 'crash') {
-                    // White noise/Explosion simulation
                     const bufferSize = audioCtx.sampleRate * 0.4;
                     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
                     const data = buffer.getChannelData(0);
@@ -680,11 +1003,11 @@
                     noise.stop(audioCtx.currentTime + 0.4);
                 }
             } catch (e) {
-                console.warn("Audio Context blocked or failed:", e);
+                console.warn("Audio Context blocked:", e);
             }
         }
 
-        function toggleMute() {
+        window.toggleMute = function() {
             isMuted = !isMuted;
             const icon = document.getElementById('sound-icon');
             if (isMuted) {
@@ -695,19 +1018,8 @@
             }
         }
 
-        // --- GLOBAL APP NAVIGATION & STATE ---
-        let currentTab = 'home';
-        let walletCoins = 2500;
-        let walletTon = 12.50;
-        let upgradeLevels = {
-            speed: 1,
-            handling: 1,
-            nitro: 1
-        };
-
-        const screens = ['splash', 'home', 'matchmaking', 'garage', 'leaderboard', 'game', 'results'];
-
-        function changeScreen(screenId) {
+        // --- STREAMING_CHUNK:App Navigation ---
+        window.changeScreen = function(screenId) {
             screens.forEach(s => {
                 const screenEl = document.getElementById(`screen-${s}`);
                 if (s === screenId) {
@@ -717,7 +1029,6 @@
                 }
             });
 
-            // Handle bottom bar visibility
             const navBar = document.getElementById('app-nav-bar');
             if (screenId === 'game' || screenId === 'splash' || screenId === 'matchmaking' || screenId === 'results') {
                 navBar.classList.add('hidden');
@@ -725,7 +1036,6 @@
                 navBar.classList.remove('hidden');
             }
 
-            // Back button handling
             const backBtn = document.getElementById('back-btn');
             if (screenId !== 'home' && screenId !== 'splash') {
                 backBtn.classList.remove('hidden');
@@ -733,7 +1043,6 @@
                 backBtn.classList.add('hidden');
             }
 
-            // Screen Specific Actions
             if (screenId === 'home') {
                 document.getElementById('user-coins').innerText = walletCoins.toLocaleString();
                 document.getElementById('user-ton').innerText = walletTon.toFixed(2) + " TON";
@@ -743,9 +1052,8 @@
             }
         }
 
-        function changeTab(tabId) {
+        window.changeTab = function(tabId) {
             playSound('click');
-            // Update UI Tab indicators
             ['home', 'garage', 'leaderboard'].forEach(tab => {
                 const tabBtn = document.getElementById(`tab-${tab}`);
                 if (tab === tabId) {
@@ -757,13 +1065,12 @@
             changeScreen(tabId);
         }
 
-        function navigateBack() {
+        window.navigateBack = function() {
             playSound('click');
             changeTab('home');
         }
 
-        // --- STREAMING_CHUNK: Loading simulator animations... ---
-        // Splash Loading simulation
+        // --- Splash Screen Simulation ---
         window.addEventListener('load', () => {
             let progress = 0;
             const progressEl = document.getElementById('splash-progress');
@@ -772,13 +1079,13 @@
 
             const statusSteps = [
                 "Birlamchi yuklash...",
-                "Poyga kiber-dvigateli sinovdan o'tmoqda...",
-                "Serverlar bilan aloqa o'rnatilmoqda...",
+                "Multiplayer drayverini ishga tushirish...",
+                "Onlayn server bilan aloqa o'rnatilmoqda...",
                 "Tayyor!"
             ];
 
             const interval = setInterval(() => {
-                progress += Math.floor(Math.random() * 10) + 5;
+                progress += Math.floor(Math.random() * 12) + 5;
                 if (progress > 100) progress = 100;
 
                 progressEl.style.width = `${progress}%`;
@@ -800,77 +1107,10 @@
                         changeScreen('home');
                     }, 500);
                 }
-            }, 100);
+            }, 60);
         });
 
-        // --- MATCHMAKING PROCESS ---
-        let matchmakingTimeout;
-        const simulatedBots = [
-            { name: "@ton_whale", avatar: "🐋", delay: 1200 },
-            { name: "@pavel_durov", avatar: "👑", delay: 2400 },
-            { name: "@hamster_king", avatar: "🐹", delay: 3500 }
-        ];
-
-        function startMatchmaking() {
-            playSound('click');
-            if (walletCoins < 100) {
-                alert("Poygaga qo'shilish uchun kamida 100 tanga kerak!");
-                return;
-            }
-            walletCoins -= 100;
-            changeScreen('matchmaking');
-
-            // Reset matching slots
-            for (let i = 2; i <= 4; i++) {
-                const slot = document.getElementById(`slot-player-${i}`);
-                slot.className = "bg-[#121824]/40 p-3 rounded-xl border border-slate-800 flex items-center space-x-2";
-                slot.querySelector('.slot-avatar').className = "slot-avatar w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs";
-                slot.querySelector('.slot-avatar').innerText = "?";
-                slot.querySelector('.slot-info').innerHTML = `<p class="text-xs font-bold text-slate-500 italic">Izlanmoqda...</p><span class="text-[9px] text-slate-500">Kutilmoqda...</span>`;
-            }
-
-            // Simulate players joining sequentially
-            simulatedBots.forEach((bot, index) => {
-                matchmakingTimeout = setTimeout(() => {
-                    const slotNum = index + 2;
-                    const slot = document.getElementById(`slot-player-${slotNum}`);
-                    
-                    // Highlight transition
-                    slot.className = "bg-[#121824] p-3 rounded-xl border border-pink-500/50 flex items-center space-x-2 scale-105 transition-all duration-300";
-                    
-                    // Set Bot info
-                    const avatar = slot.querySelector('.slot-avatar');
-                    avatar.className = "slot-avatar w-8 h-8 rounded-full bg-pink-500/20 border border-pink-500 flex items-center justify-center text-xs";
-                    avatar.innerText = bot.avatar;
-                    
-                    const info = slot.querySelector('.slot-info');
-                    info.innerHTML = `<p class="text-xs font-bold text-white">${bot.name}</p><span class="text-[9px] text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> Ulandi</span>`;
-                    
-                    playSound('click', 1.2 + (index * 0.1));
-
-                    // Return scale back after a moment
-                    setTimeout(() => {
-                        slot.classList.remove('scale-105');
-                    }, 300);
-
-                    // If last bot is connected, initiate game countdown
-                    if (index === simulatedBots.length - 1) {
-                        setTimeout(() => {
-                            launchGame();
-                        }, 1000);
-                    }
-                }, bot.delay);
-            });
-        }
-
-        function cancelMatchmaking() {
-            playSound('click');
-            walletCoins += 100; // refund entry fee
-            clearTimeout(matchmakingTimeout);
-            changeScreen('home');
-        }
-
-        // --- GARAGE / UPGRADES ---
+        // --- STREAMING_CHUNK:Upgrade Mechanics ---
         const upgradeCosts = [150, 300, 600, 1200, 2500];
 
         function updateGarageUI() {
@@ -878,7 +1118,6 @@
                 const lvl = upgradeLevels[type];
                 document.getElementById(`stat-val-${type}`).innerText = `Lvl ${lvl}/5`;
                 
-                // Set Up Bars
                 for (let i = 1; i <= 5; i++) {
                     const bar = document.getElementById(`bar-${type}-${i}`);
                     if (i <= lvl) {
@@ -890,7 +1129,6 @@
                     }
                 }
 
-                // Upgrading Button Cost
                 const btn = document.getElementById(`btn-up-${type}`);
                 if (lvl >= 5) {
                     btn.innerHTML = `<span>MAX</span>`;
@@ -904,7 +1142,7 @@
             });
         }
 
-        function buyUpgrade(type) {
+        window.buyUpgrade = function(type) {
             const currentLvl = upgradeLevels[type];
             if (currentLvl >= 5) return;
             const cost = upgradeCosts[currentLvl - 1];
@@ -916,11 +1154,11 @@
                 document.getElementById('garage-coins').innerText = walletCoins.toLocaleString();
                 updateGarageUI();
             } else {
-                alert("Yangilash uchun yetarli tanga mavjud emas!");
+                showNotification("Yetarli tangalar mavjud emas", "Musobaqalarda g'alaba qozonib tangalarni ko'paytiring.");
             }
         }
 
-        function claimDailyReward(btn) {
+        window.claimDailyReward = function(btn) {
             playSound('collect');
             walletCoins += 50;
             btn.innerHTML = "<i class='fa-solid fa-check'></i> Olingan";
@@ -929,25 +1167,19 @@
             document.getElementById('user-coins').innerText = walletCoins.toLocaleString();
         }
 
-        // --- STREAMING_CHUNK: Initializing 4-Player Physics & Canvas loop... ---
-        // --- 4-PLAYER RACING GAME ENGINE ---
+        // --- STREAMING_CHUNK:4-Player Cyber Game Engine ---
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
 
-        // Input Tracking States
-        const inputs = {
-            left: false,
-            right: false,
-            gas: false,
-            boost: false
-        };
+        const inputs = { left: false, right: false, gas: false, boost: false };
 
-        // Attach touch controls
         function setupTouchControls() {
             const bindBtn = (id, prop) => {
                 const btn = document.getElementById(id);
+                // Bind touch events properly supporting multiple targets
                 btn.addEventListener('touchstart', (e) => { e.preventDefault(); inputs[prop] = true; });
                 btn.addEventListener('touchend', (e) => { e.preventDefault(); inputs[prop] = false; });
+                // Fallbacks for mouse
                 btn.addEventListener('mousedown', () => { inputs[prop] = true; });
                 btn.addEventListener('mouseup', () => { inputs[prop] = false; });
                 btn.addEventListener('mouseleave', () => { inputs[prop] = false; });
@@ -959,7 +1191,6 @@
             bindBtn('ctrl-boost', 'boost');
         }
 
-        // Keyboard Controls
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') inputs.left = true;
             if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') inputs.right = true;
@@ -974,7 +1205,6 @@
             if (e.key === ' ' || e.key === 'b' || e.key === 'B') inputs.boost = false;
         });
 
-        // Resize Canvas dynamically
         function resizeCanvas() {
             const rect = canvas.parentNode.getBoundingClientRect();
             canvas.width = rect.width;
@@ -982,18 +1212,13 @@
         }
         window.addEventListener('resize', resizeCanvas);
 
-        // Track generation parameters
         let trackCenterPoints = [];
         const numTrackPoints = 30;
-        let trackOuterLeft = [];
-        let trackOuterRight = [];
 
         function generateCyberTrack() {
             trackCenterPoints = [];
             const W = canvas.width || 400;
             const H = canvas.height || 600;
-            
-            // Custom circuit coordinates adjusted dynamically to cover outer map bounds nicely
             const centerX = W / 2;
             const centerY = H / 2;
             const rx = W * 0.38;
@@ -1001,7 +1226,6 @@
 
             for (let i = 0; i < numTrackPoints; i++) {
                 const angle = (i / numTrackPoints) * Math.PI * 2;
-                // Add slight noise to make curves fun
                 const rFactor = 1.0 + Math.sin(angle * 4) * 0.15;
                 const x = centerX + Math.cos(angle) * rx * rFactor;
                 const y = centerY + Math.sin(angle) * ry * rFactor;
@@ -1009,47 +1233,48 @@
             }
         }
 
-        // --- STREAMING_CHUNK: Instantiating Racers & Game Objects... ---
-        // Cars Configuration
         let players = [];
         let powerups = [];
         let particles = [];
         let trackWidth = 48;
         let countdownTimer = 3;
-        let gameRunning = false;
-        let gameFinished = false;
-        let lapsToWin = 3;
 
         class Car {
-            constructor(name, x, y, color, isPlayer = false, botLevel = 0.5) {
+            constructor(id, name, x, y, color, isPlayer = false, botLevel = 0.5, isBot = false) {
+                this.id = id;
                 this.name = name;
                 this.x = x;
                 this.y = y;
                 this.angle = 0;
                 this.speed = 0;
-                this.targetAngle = 0;
                 this.color = color;
                 this.isPlayer = isPlayer;
-                this.botLevel = botLevel; // steering speed/precision
+                this.isBot = isBot;
+                this.botLevel = botLevel;
 
-                // Statistics
                 this.lap = 1;
                 this.currentWaypoint = 0;
                 this.finished = false;
                 this.finishRank = 0;
 
-                // Engine dynamics
+                // Physics metrics
                 this.maxSpeed = isPlayer ? (3.5 + upgradeLevels.speed * 0.4) : (3.6 + Math.random() * 0.6);
                 this.accel = isPlayer ? (0.05 + upgradeLevels.speed * 0.01) : 0.06;
                 this.steerPower = isPlayer ? (0.04 + upgradeLevels.handling * 0.008) : 0.05;
                 this.drag = 0.985;
 
-                // Nitro status
                 this.boostSupply = isPlayer ? upgradeLevels.nitro : 1; 
                 this.boostActive = false;
                 this.boostCooldown = 0;
                 this.shieldActive = false;
                 this.shieldTimer = 0;
+
+                // Prediction/Dead reckoning variables for smooth multiplayer interpolation
+                this.targetX = x;
+                this.targetY = y;
+                this.targetAngle = 0;
+                this.targetSpeed = 0;
+                this.lastUpdate = Date.now();
 
                 this.driftMarks = [];
             }
@@ -1059,100 +1284,98 @@
 
                 if (this.isPlayer) {
                     this.handlePlayerInput();
-                } else {
-                    this.handleBotAI();
-                }
-
-                // Dynamics Math
-                this.speed *= this.drag;
-                
-                // Active boost handles
-                if (this.boostActive) {
-                    this.speed += this.accel * 2.5;
-                    this.boostCooldown--;
                     
-                    // Boost flame trails
-                    if (Math.random() < 0.4) {
-                        createSpark(this.x - Math.cos(this.angle) * 12, this.y - Math.sin(this.angle) * 12, '#f59e0b');
+                    this.speed *= this.drag;
+                    if (this.boostActive) {
+                        this.speed += this.accel * 2.5;
+                        this.boostCooldown--;
+                        if (Math.random() < 0.4) {
+                            createSpark(this.x - Math.cos(this.angle) * 12, this.y - Math.sin(this.angle) * 12, '#f59e0b');
+                        }
+                        if (this.boostCooldown <= 0) this.boostActive = false;
                     }
-                    if (this.boostCooldown <= 0) {
-                        this.boostActive = false;
-                    }
+
+                    const actualMaxSpeed = this.boostActive ? this.maxSpeed * 1.6 : this.maxSpeed;
+                    if (this.speed > actualMaxSpeed) this.speed = actualMaxSpeed;
+
+                    this.x += Math.cos(this.angle) * this.speed;
+                    this.y += Math.sin(this.angle) * this.speed;
+
+                } else if (this.isBot) {
+                    // Bot AI Logic
+                    this.handleBotAI();
+                    this.speed *= this.drag;
+                    this.x += Math.cos(this.angle) * this.speed;
+                    this.y += Math.sin(this.angle) * this.speed;
+                } else {
+                    // REAL ONLINE PLAYER: Dead Reckoning and Smooth Prediction sliding
+                    const elapsed = (Date.now() - this.lastUpdate) / 1000;
+                    
+                    // Predict expected coordinate using basic kinematics
+                    const expectedX = this.targetX + Math.cos(this.targetAngle) * this.targetSpeed * elapsed * 60;
+                    const expectedY = this.targetY + Math.sin(this.targetAngle) * this.targetSpeed * elapsed * 60;
+
+                    // Interpolate smoothly with 15% sliding rate
+                    this.x += (expectedX - this.x) * 0.15;
+                    this.y += (expectedY - this.y) * 0.15;
+                    
+                    let diff = this.targetAngle - this.angle;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    this.angle += diff * 0.15;
+                    
+                    this.speed = this.targetSpeed;
                 }
 
-                // Cap overall Speed limits
-                const actualMaxSpeed = this.boostActive ? this.maxSpeed * 1.6 : this.maxSpeed;
-                if (this.speed > actualMaxSpeed) this.speed = actualMaxSpeed;
-
-                // Calculate next movements
-                this.x += Math.cos(this.angle) * this.speed;
-                this.y += Math.sin(this.angle) * this.speed;
-
-                // Drift / Exhaust particle emissions
                 if (this.speed > 1.5) {
-                    this.driftMarks.push({ x: this.x, y: this.y, alpha: 1.0 });
-                    if (this.driftMarks.length > 30) this.driftMarks.shift();
+                    this.driftMarks.push({ x: this.x, y: this.y });
+                    if (this.driftMarks.length > 25) this.driftMarks.shift();
                 }
 
-                // Tick shielding
                 if (this.shieldActive) {
                     this.shieldTimer--;
                     if (this.shieldTimer <= 0) this.shieldActive = false;
                 }
 
-                // Waypoint logic tracking laps
                 this.trackWaypoints();
             }
 
             handlePlayerInput() {
-                // Acceleration
                 if (inputs.gas) {
                     this.speed += this.accel;
                     if (Math.random() < 0.1) {
                         playSound('engine', 0.5 + (this.speed / this.maxSpeed) * 1.2);
                     }
                 }
-
-                // Steering
                 if (inputs.left) this.angle -= this.steerPower;
                 if (inputs.right) this.angle += this.steerPower;
 
-                // Nitro boost activation
                 if (inputs.boost && this.boostSupply > 0 && !this.boostActive) {
                     this.boostSupply--;
                     document.getElementById('boost-indicator').innerText = this.boostSupply;
                     this.boostActive = true;
-                    this.boostCooldown = 90; // Frame steps (~1.5s)
+                    this.boostCooldown = 90; 
                     playSound('boost');
                     createScreenShake();
                 }
             }
 
             handleBotAI() {
-                // Track next waypoint index coordinate
                 const wp = trackCenterPoints[this.currentWaypoint];
                 const dx = wp.x - this.x;
                 const dy = wp.y - this.y;
                 const dist = Math.hypot(dx, dy);
 
-                // Look ahead steering direction
                 const targetAngle = Math.atan2(dy, dx);
                 let diff = targetAngle - this.angle;
-
-                // Keep difference in range [-PI, PI]
                 while (diff < -Math.PI) diff += Math.PI * 2;
                 while (diff > Math.PI) diff -= Math.PI * 2;
 
-                // Smart steering adjusted by individual levels
                 this.angle += Math.sign(diff) * Math.min(Math.abs(diff), this.steerPower * this.botLevel);
-
-                // Always Accelerate forward inside boundaries
                 this.speed += this.accel * (0.85 + Math.random() * 0.15);
 
-                // Random Nitro usage
                 if (dist > 150 && !this.boostActive && this.boostSupply > 0 && Math.random() < 0.005) {
                     this.boostActive = true;
-                    this.boostSupply--;
                     this.boostCooldown = 80;
                 }
             }
@@ -1164,13 +1387,12 @@
                 if (dist < trackWidth * 1.5) {
                     this.currentWaypoint = (this.currentWaypoint + 1) % numTrackPoints;
                     
-                    // Lap complete trigger when passing zero waypoint
                     if (this.currentWaypoint === 0) {
                         this.lap++;
                         if (this.isPlayer) {
                             document.getElementById('hud-lap').innerText = `${Math.min(this.lap, lapsToWin)}/${lapsToWin}`;
                         }
-                        if (this.lap > lapsToWin) {
+                        if (this.lap > lapsToWin && !this.finished) {
                             this.finished = true;
                             declareFinished(this);
                         }
@@ -1181,7 +1403,7 @@
             draw() {
                 ctx.save();
                 
-                // Draw Drift skid marks trail
+                // Track drift tails
                 ctx.lineWidth = 1.5;
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
                 ctx.beginPath();
@@ -1191,15 +1413,12 @@
                 });
                 ctx.stroke();
 
-                // Position car on map frame
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
 
-                // Car Chassis glow
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = this.color;
 
-                // Car base polygon shape
                 ctx.fillStyle = '#0f172a';
                 ctx.strokeStyle = this.color;
                 ctx.lineWidth = 2;
@@ -1212,17 +1431,14 @@
                 ctx.fill();
                 ctx.stroke();
 
-                // Cyberglass cabin
                 ctx.fillStyle = 'rgba(56, 189, 248, 0.7)';
                 ctx.fillRect(-2, -3, 6, 6);
 
-                // Bright glowing headlights
                 ctx.shadowColor = '#fff';
                 ctx.fillStyle = '#fbbf24';
                 ctx.fillRect(10, -3.5, 2, 1.5);
                 ctx.fillRect(10, 2, 2, 1.5);
 
-                // Draw protective energy shield circles
                 if (this.shieldActive) {
                     ctx.strokeStyle = '#22d3ee';
                     ctx.lineWidth = 1.5;
@@ -1236,12 +1452,12 @@
             }
         }
 
-        // Collectibles Types
+        // --- STREAMING_CHUNK:Powerups & Particles ---
         class Powerup {
             constructor(x, y, type) {
                 this.x = x;
                 this.y = y;
-                this.type = type; // 'boost', 'shield', 'coin'
+                this.type = type; 
                 this.active = true;
                 this.pulseTimer = 0;
             }
@@ -1257,7 +1473,6 @@
                 if (this.type === 'boost') {
                     ctx.fillStyle = '#eab308';
                     ctx.shadowColor = '#eab308';
-                    // lightning bolt path
                     ctx.beginPath();
                     ctx.moveTo(-size/2, -size);
                     ctx.lineTo(size/3, -size/4);
@@ -1277,16 +1492,12 @@
                     ctx.beginPath();
                     ctx.arc(0, 0, size, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.fillStyle = '#fff';
-                    ctx.font = '8px fontawesome';
-                    ctx.fillText('$', -3, 3);
                 }
 
                 ctx.restore();
             }
         }
 
-        // Particle System
         class Particle {
             constructor(x, y, vx, vy, color, life) {
                 this.x = x;
@@ -1328,53 +1539,61 @@
             }
         }
 
-        // --- STREAMING_CHUNK: Spawning bonus power-ups on track... ---
         function spawnTrackPowerups() {
             powerups = [];
-            // Spawn items along the curve paths randomly
             for (let i = 2; i < numTrackPoints; i += 4) {
                 const p = trackCenterPoints[i];
-                // alternate types
                 const types = ['boost', 'shield', 'coin'];
                 const type = types[(i / 4) % types.length];
                 powerups.push(new Powerup(p.x + (Math.random() * 10 - 5), p.y + (Math.random() * 10 - 5), type));
             }
         }
 
-        // Screen Shake Effect
         let shakeIntensity = 0;
         function createScreenShake() {
             shakeIntensity = 10;
         }
 
-        // Main Launch Loop
-        function launchGame() {
+        // --- STREAMING_CHUNK:Running the Active Game Loop ---
+        function launchGame(roomData) {
+            gameRunning = true;
             changeScreen('game');
             resizeCanvas();
             generateCyberTrack();
-            
-            // Spawn 4 Cars on starting coordinates (at index 0 of the track)
+
             const pStart = trackCenterPoints[0];
             const pNext = trackCenterPoints[1];
             const startAngle = Math.atan2(pNext.y - pStart.y, pNext.x - pStart.x);
 
-            players = [
-                new Car("Siz", pStart.x - 15, pStart.y - 15, '#22d3ee', true), // Blue
-                new Car("@ton_whale", pStart.x + 15, pStart.y - 15, '#e11d48', false, 0.7), // Red
-                new Car("@pavel_durov", pStart.x - 15, pStart.y + 15, '#10b981', false, 0.9), // Green
-                new Car("@hamster_king", pStart.x + 15, pStart.y + 15, '#eab308', false, 0.75) // Yellow
+            const colors = ['#22d3ee', '#ec4899', '#10b981', '#eab308'];
+            const offsets = [
+                { x: -15, y: -15 },
+                { x: 15, y: -15 },
+                { x: -15, y: 15 },
+                { x: 15, y: 15 }
             ];
 
-            // Set Initial orientations
-            players.forEach(c => c.angle = startAngle);
+            players = roomData.players.map((p, index) => {
+                const isMe = p.uid === myUserId;
+                const car = new Car(
+                    p.uid,
+                    p.username,
+                    pStart.x + offsets[index].x,
+                    pStart.y + offsets[index].y,
+                    colors[index % colors.length],
+                    isMe,
+                    0.7 + Math.random() * 0.2, // Bot steer factor
+                    p.isBot
+                );
+                car.angle = startAngle;
+                return car;
+            });
 
             spawnTrackPowerups();
             particles = [];
             countdownTimer = 3;
-            gameRunning = false;
-            gameFinished = false;
+            finishedRacersCount = 0;
 
-            // Start Countdown UI timer
             const countOverlay = document.getElementById('game-countdown-overlay');
             const countText = document.getElementById('game-countdown-text');
             countOverlay.classList.remove('opacity-0');
@@ -1388,47 +1607,58 @@
                 } else if (countdownTimer === 0) {
                     countText.innerText = "YUR!";
                     playSound('click', 2.0);
-                    gameRunning = true;
+                    startGameLoops();
                 } else {
                     clearInterval(countInterval);
                     countOverlay.classList.add('opacity-0');
                 }
             }, 1000);
 
-            // Register Nitro counter HUD indicator
-            document.getElementById('boost-indicator').innerText = players[0].boostSupply;
-
-            // setup inputs
             setupTouchControls();
+        }
 
-            // Run high speed rendering loop
+        function startGameLoops() {
+            // High-precision periodic coordinate write loop (Throttled perfectly to 3 times/sec)
+            if (writeStateInterval) clearInterval(writeStateInterval);
+            writeStateInterval = setInterval(async () => {
+                if (!gameRunning || !currentRoomRef) return;
+                const myCar = players.find(c => c.isPlayer);
+                if (myCar) {
+                    try {
+                        const updateObj = {};
+                        updateObj[`states.${myUserId}`] = {
+                            x: myCar.x,
+                            y: myCar.y,
+                            angle: myCar.angle,
+                            speed: myCar.speed,
+                            boostActive: myCar.boostActive,
+                            shieldActive: myCar.shieldActive,
+                            lastUpdate: Date.now()
+                        };
+                        await updateDoc(currentRoomRef, updateObj);
+                    } catch (e) {
+                        console.error("Coordinate sync write error:", e);
+                    }
+                }
+            }, 300);
+
             requestAnimationFrame(gameLoop);
         }
 
-        // Declare finishing placements
-        let finishedRacersCount = 0;
         function declareFinished(car) {
             finishedRacersCount++;
             car.finishRank = finishedRacersCount;
             
             if (car.isPlayer) {
                 gameFinished = true;
-                setTimeout(() => {
-                    displayResults(car.finishRank);
-                }, 1000);
-            }
-
-            // Once everyone is done, break loop
-            if (finishedRacersCount === 4) {
                 gameRunning = false;
+                if (writeStateInterval) clearInterval(writeStateInterval);
+                displayResults(car.finishRank);
             }
         }
 
-        // --- STREAMING_CHUNK: Processing collisions and track checks... ---
         function checkCollisions() {
-            // 1. Check Track Boundaries Wall collisions
             players.forEach(car => {
-                // Find nearest track point to establish limits
                 let minDist = Infinity;
                 let nearestIdx = 0;
                 
@@ -1440,16 +1670,13 @@
                     }
                 });
 
-                // Check distance against track width
                 if (minDist > trackWidth) {
-                    // Push car back towards center
                     const centerPt = trackCenterPoints[nearestIdx];
                     const angleToCenter = Math.atan2(centerPt.y - car.y, centerPt.x - car.x);
                     
                     car.x += Math.cos(angleToCenter) * (minDist - trackWidth) * 0.5;
                     car.y += Math.sin(angleToCenter) * (minDist - trackWidth) * 0.5;
                     
-                    // Reduce Speed penalization
                     if (!car.shieldActive) {
                         car.speed *= 0.8;
                         createSpark(car.x, car.y, '#f59e0b');
@@ -1457,7 +1684,6 @@
                 }
             });
 
-            // 2. Multi-car bumping mechanics
             for (let i = 0; i < players.length; i++) {
                 for (let j = i + 1; j < players.length; j++) {
                     const c1 = players[i];
@@ -1466,17 +1692,14 @@
                     const dy = c2.y - c1.y;
                     const dist = Math.hypot(dx, dy);
 
-                    if (dist < 14) { // bump overlap
+                    if (dist < 14) { 
                         const angle = Math.atan2(dy, dx);
-                        
-                        // Recoil bounce physics
                         const force = (14 - dist) * 0.5;
                         c1.x -= Math.cos(angle) * force;
                         c1.y -= Math.sin(angle) * force;
                         c2.x += Math.cos(angle) * force;
                         c2.y += Math.sin(angle) * force;
 
-                        // swap proportional velocities
                         const temp = c1.speed;
                         c1.speed = c2.speed * 0.8;
                         c2.speed = temp * 0.8;
@@ -1487,7 +1710,6 @@
                 }
             }
 
-            // 3. Powerup collection checks
             powerups.forEach(pow => {
                 if (!pow.active) return;
 
@@ -1504,22 +1726,17 @@
                                 document.getElementById('boost-indicator').innerText = car.boostSupply;
                             } else if (pow.type === 'shield') {
                                 car.shieldActive = true;
-                                car.shieldTimer = 180; // ~3 seconds
+                                car.shieldTimer = 180; 
                             } else if (pow.type === 'coin') {
                                 walletCoins += 50;
                             }
-                        } else {
-                            // Give Bots simple AI enhancements
-                            if (pow.type === 'boost') car.boostSupply++;
                         }
                     }
                 });
             });
         }
 
-        // Sort out Live Positions scoreboard
         function updateLiveRankings() {
-            // Sort racers by Lap & current waypoint path progress
             const sorted = [...players].sort((a, b) => {
                 if (a.finished !== b.finished) {
                     return a.finished ? -1 : 1;
@@ -1530,7 +1747,6 @@
                 return b.currentWaypoint - a.currentWaypoint;
             });
 
-            // Update DOM Overlay HUD lines
             sorted.forEach((racer, index) => {
                 const suffixes = ["st", "nd", "rd", "th"];
                 const el = document.getElementById(`rank-${index + 1}-line`);
@@ -1538,10 +1754,7 @@
             });
         }
 
-        // --- STREAMING_CHUNK: Drawing backgrounds and track graphics... ---
-        // DRAWING CORE
         function drawTrack() {
-            // 1. Draw solid dark background path
             ctx.lineWidth = trackWidth * 2;
             ctx.strokeStyle = '#0e1726';
             ctx.lineCap = 'round';
@@ -1555,16 +1768,14 @@
             ctx.closePath();
             ctx.stroke();
 
-            // 2. Glowing Neon borders
+            // Inner cyber rail drawing
             ctx.lineWidth = 2;
             ctx.strokeStyle = '#06b6d4';
             ctx.shadowBlur = 10;
             ctx.shadowColor = '#06b6d4';
 
-            // Inner track border
             ctx.beginPath();
             trackCenterPoints.forEach((p, i) => {
-                // compute inward normal offset
                 const prev = trackCenterPoints[i === 0 ? numTrackPoints - 1 : i - 1];
                 const next = trackCenterPoints[(i + 1) % numTrackPoints];
                 const dx = next.x - prev.x;
@@ -1582,7 +1793,7 @@
             ctx.closePath();
             ctx.stroke();
 
-            // Outer track border
+            // Outer pink cyber rail
             ctx.strokeStyle = '#ec4899';
             ctx.shadowColor = '#ec4899';
             ctx.beginPath();
@@ -1604,10 +1815,9 @@
             ctx.closePath();
             ctx.stroke();
 
-            // Clear Shadow states
             ctx.shadowBlur = 0;
 
-            // 3. Finish Line checkered band
+            // Finish checkboard line drawing
             ctx.save();
             const p0 = trackCenterPoints[0];
             const p1 = trackCenterPoints[1];
@@ -1624,15 +1834,12 @@
             ctx.restore();
         }
 
-        // Core Animation Loop
         function gameLoop() {
-            if (!canvas.offsetParent) return; // Prevent performance ticks if invisible
+            if (!gameRunning && !gameFinished) return;
 
-            // Clear Canvas Frame
             ctx.fillStyle = '#05070a';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Screenshake camera offsets
             ctx.save();
             if (shakeIntensity > 0) {
                 const dx = (Math.random() - 0.5) * shakeIntensity;
@@ -1641,20 +1848,17 @@
                 shakeIntensity *= 0.9;
             }
 
-            // Draw circuit & collectibles
             drawTrack();
 
             powerups.forEach(p => {
                 if (p.active) p.draw();
             });
 
-            // Update / Render Racers
             players.forEach(car => {
                 car.update();
                 car.draw();
             });
 
-            // Handle Particles loop
             particles = particles.filter(p => {
                 p.update();
                 p.draw();
@@ -1663,13 +1867,11 @@
 
             ctx.restore();
 
-            // Engine sound pitches matched to speeds
-            const mainPlayer = players[0];
+            const mainPlayer = players.find(c => c.isPlayer);
             if (mainPlayer) {
                 document.getElementById('hud-speed').innerText = Math.round(mainPlayer.speed * 85);
             }
 
-            // Run Checks
             checkCollisions();
             updateLiveRankings();
 
@@ -1678,11 +1880,9 @@
             }
         }
 
-        // DISPLAY WINNER RESULTS OVERLAY
         function displayResults(rank) {
             changeScreen('results');
             
-            // Adjust Reward distributions
             let earnedCoins = 50;
             let earnedPts = 20;
             
@@ -1701,14 +1901,23 @@
                 document.getElementById('results-headline').className = "text-2xl font-black text-pink-500";
             }
 
-            // Save state
             walletCoins += earnedCoins;
 
             document.getElementById('results-position').innerText = `#${rank}`;
             document.getElementById('results-reward-coins').innerText = `+${earnedCoins} tanga`;
             document.getElementById('results-reward-pts').innerText = `+${earnedPts} pts`;
             document.getElementById('results-new-balance').innerText = `${walletCoins.toLocaleString()} tanga`;
+
+            // Clean up lobby database subscription
+            if (unsubscribeRoom) {
+                unsubscribeRoom();
+                unsubscribeRoom = null;
+            }
         }
+
+        // --- GLOBAL EXPORTS FOR INLINE ONCLICK HANDLERS ---
+        window.startMatchmaking = startMatchmaking;
+        window.cancelMatchmaking = cancelMatchmaking;
     </script>
 </body>
 </html>

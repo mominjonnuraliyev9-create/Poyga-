@@ -604,7 +604,7 @@
         let db, auth;
         let isAuthComplete = false;
         let myUsername = "@poygachi_uz";
-        let myUserId = "";
+        let myUserId = "user_" + Math.random().toString(36).substring(2, 9);
         let currentRoomId = null;
         let currentRoomRef = null;
         let unsubscribeRoom = null;
@@ -695,7 +695,7 @@
 
         function handleAuthError(err) {
             console.error("Authentication Error:", err);
-            setOnlineIndicator(false, "Tarmoq Xatoligi");
+            setOnlineIndicator(false, "Oflayn (Solo rejim)");
         }
 
         function setOnlineIndicator(online, text) {
@@ -705,8 +705,8 @@
                 dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
                 label.className = "text-[9px] text-emerald-400 font-bold";
             } else {
-                dot.className = "w-1.5 h-1.5 rounded-full bg-red-500 animate-ping";
-                label.className = "text-[9px] text-red-400 font-bold";
+                dot.className = "w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse";
+                label.className = "text-[9px] text-amber-400 font-bold";
             }
             label.innerText = text;
         }
@@ -718,12 +718,35 @@
                 showNotification("Mablag' yetarsiz", "Onlayn poygaga kirish to'lovi 100 tangani tashkil etadi.");
                 return;
             }
+
+            walletCoins -= 100;
+
+            // FALLBACK TO OFFLINE LOCAL RACE IF NETWORK ERROR OCCURS (SOLVES GAME START BLOCK)
             if (!isAuthComplete) {
-                showNotification("Ulanish xatosi", "Serverga onlayn ulanish amalga oshmadi. Iltimos, qayta urunib ko'ring.");
+                changeScreen('matchmaking');
+                document.getElementById('match-user-1').innerText = myUsername + " (Siz)";
+                document.getElementById('match-timer-text').innerText = "Kutish (Solo rejim)...";
+                
+                // Show slot animations joining with bots instantly
+                setTimeout(() => {
+                    const botList = [
+                        { uid: "bot1", username: "@ton_whale 🤖", isBot: true, color: "#a855f7" },
+                        { uid: "bot2", username: "@pavel_durov 🤖", isBot: true, color: "#10b981" },
+                        { uid: "bot3", username: "@hamster_king 🤖", isBot: true, color: "#eab308" }
+                    ];
+                    
+                    const roomData = {
+                        players: [
+                            { uid: myUserId, username: myUsername, isBot: false, color: '#22d3ee' },
+                            ...botList
+                        ]
+                    };
+                    
+                    launchGame(roomData);
+                }, 1500);
                 return;
             }
 
-            walletCoins -= 100;
             changeScreen('matchmaking');
             document.getElementById('match-user-1').innerText = myUsername;
 
